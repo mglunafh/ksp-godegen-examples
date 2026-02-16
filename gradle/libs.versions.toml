@@ -10,7 +10,8 @@ google-ksp      = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 bom-junit5      = { module = "org.junit:junit-bom", version = "5.14.2" }
 
 google-kspApi   = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
-kotlinpoet      = { module = "com.squareup:kotlinpoet", version = "2.2.0" }
+kotlinpoet-lib  = { module = "com.squareup:kotlinpoet", version = "2.2.0" }
+kotlinpoet-ksp  = { module = "com.squareup:kotlinpoet-ksp", version = "2.2.0" }
 
 junit-jupiter   = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher  = { module = "org.junit.platform:junit-platform-launcher" }
