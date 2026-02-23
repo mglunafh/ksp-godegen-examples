@@ -1,4 +1,4 @@
-# ksp-godegen-examples
+# ksp-codegen-examples
 Repository with some examples of Kotlin code generation and KSP usage
 
 - **DebugLog**: Adds a simple annotation `@DebugLog` for the Kotlin methods.
