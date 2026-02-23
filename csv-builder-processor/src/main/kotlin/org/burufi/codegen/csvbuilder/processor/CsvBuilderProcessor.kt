@@ -28,7 +28,6 @@ class CsvBuilderProcessor(
         resolver.getSymbolsWithAnnotation(CsvBuilder::class.qualifiedName!!)
             .filterIsInstance(KSClassDeclaration::class.java)
             .forEach {
-                println(it)
                 val packageName = it.packageName.asString()
                 val csvBuilderType = createCsvBuilder(it)
                 val builderName = csvBuilderType.name!!
@@ -51,6 +50,9 @@ class CsvBuilderProcessor(
     }
 
     private fun createCsvBuilder(clazz: KSClassDeclaration): TypeSpec {
+        val annotation = clazz.annotations.first { ann -> ann.shortName.asString() == CsvBuilder::class.simpleName }
+        val separatorArg = annotation.arguments.first { arg -> arg.name?.asString() == "separator" }
+
         val className = clazz.simpleName.asString()
 
         val fnToCsvString = createFunctionToCsvString(clazz)
@@ -58,7 +60,7 @@ class CsvBuilderProcessor(
 
         val csvBuilderType = TypeSpec.objectBuilder("${className}CsvConverter")
             .addProperty(PropertySpec.builder(separatorValName, Char::class, KModifier.CONST)
-                .initializer("','")
+                .initializer("'%L'",  separatorArg.value)
                 .build()
             )
             .addFunction(fnToCsvString)

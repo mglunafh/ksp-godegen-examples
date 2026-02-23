@@ -1,5 +1,6 @@
 package org.burufi.codegen.csvbuilder.app
 
+import org.burufi.codegen.csvbuilder.app.SomeLectureCsvConverter.writeCsv
 import org.burufi.codegen.csvbuilder.app.SomeStudentCsvConverter.toCsvString
 import org.burufi.codegen.csvbuilder.app.SomeStudentCsvConverter.writeCsv
 import org.burufi.codegen.csvbuilder.processor.CsvBuilder
@@ -16,6 +17,15 @@ fun main(args: Array<String>) {
     }
     val file = File("students.csv")
     someStudents.writeCsv(file.outputStream(), printHeader = false)
+
+    val calculusOne = SomeLecture(1, "Calculus 1", 120)
+    val geometry = SomeLecture(2, "Geometry", 120)
+    val discreteMath = SomeLecture(3, "Discrete math", 80)
+    val concreteMath = SomeLecture(3, "Concrete math", 80)
+
+    val lectures = listOf(calculusOne, geometry, discreteMath, concreteMath)
+    val lectureFile = File("lectures.tsv")
+    lectures.writeCsv(lectureFile.outputStream(), printHeader = true)
 }
 
 data class Student(
@@ -32,7 +42,7 @@ data class SomeStudent(
     val surname: String
 )
 
-@CsvBuilder
+@CsvBuilder(separator = '\t')
 data class SomeLecture(
     val index: Int,
     val name: String,
