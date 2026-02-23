@@ -11,8 +11,11 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import java.io.OutputStream
 
 class CsvBuilderProcessor(
     private val codeGenerator: CodeGenerator,
@@ -50,18 +53,22 @@ class CsvBuilderProcessor(
     private fun createCsvBuilder(clazz: KSClassDeclaration): TypeSpec {
         val className = clazz.simpleName.asString()
 
+        val fnToCsvString = createFunctionToCsvString(clazz)
+        val fnWriteCsv = createFunctionWriteCsv(clazz, fnToCsvString)
+
         val csvBuilderType = TypeSpec.objectBuilder("${className}CsvConverter")
-            .addProperty(PropertySpec.builder(separatorValName, String::class, KModifier.CONST)
-                .initializer("%S", ",")
+            .addProperty(PropertySpec.builder(separatorValName, Char::class, KModifier.CONST)
+                .initializer("','")
                 .build()
             )
-            .addFunction(createExtensionFunction(clazz))
+            .addFunction(fnToCsvString)
+            .addFunction(fnWriteCsv)
             .build()
 
         return csvBuilderType
     }
 
-    private fun createExtensionFunction(clazz: KSClassDeclaration): FunSpec {
+    private fun createFunctionToCsvString(clazz: KSClassDeclaration): FunSpec {
         val className = clazz.simpleName.asString()
         val packageName = clazz.packageName.asString()
         val poetClass = ClassName(packageName, className)
@@ -74,6 +81,38 @@ class CsvBuilderProcessor(
             .receiver(poetClass)
             .returns(String::class)
             .addStatement("return %P", csvStringStatement)
+            .build()
+
+        return extension
+    }
+
+    private fun createFunctionWriteCsv(clazz: KSClassDeclaration, fnToCsvString: FunSpec): FunSpec {
+        val className = clazz.simpleName.asString()
+        val packageName = clazz.packageName.asString()
+        val poetClass = ClassName(packageName, className)
+        val targetClass = ClassName("kotlin.collections", "List").parameterizedBy(poetClass)
+
+        val csvHeaderStatement = clazz.getAllProperties()
+            .filter { it.hasBackingField }
+            .joinToString(separator = $$"${$${separatorValName}}") { it.simpleName.asString() }
+
+        val extension = FunSpec.builder("writeCsv")
+            .receiver(targetClass)
+            .addParameter("outputStream", OutputStream::class)
+            .addParameter(ParameterSpec.builder("printHeader", Boolean::class)
+                .defaultValue("true")
+                .build()
+            )
+            .returns(Unit::class)
+            .beginControlFlow("outputStream.bufferedWriter(Charsets.UTF_8).use")
+                .beginControlFlow("if (printHeader)")
+                    .addStatement("val header = %P", csvHeaderStatement)
+                    .addStatement("it.appendLine(header)")
+                .endControlFlow()
+                .beginControlFlow("forEach")
+                    .addStatement("data -> it.appendLine(data.%N())", fnToCsvString)
+                .endControlFlow()
+            .endControlFlow()
             .build()
 
         return extension
